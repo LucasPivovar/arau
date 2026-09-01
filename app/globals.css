@@ -135,6 +135,26 @@ body {
     overflow-x: hidden;
     max-width: 100vw;
   }
+  button,
+  a,
+  label,
+  select,
+  summary,
+  [role="button"],
+  [draggable="true"],
+  input[type="button"],
+  input[type="checkbox"],
+  input[type="file"],
+  input[type="radio"],
+  input[type="reset"],
+  input[type="submit"] {
+    cursor: pointer;
+  }
+  button:disabled,
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
 }
 
 .leaflet-container {
