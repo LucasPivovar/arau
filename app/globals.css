@@ -136,3 +136,34 @@ body {
     max-width: 100vw;
   }
 }
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font-family: inherit;
+  background: #e8efe9;
+}
+
+.leaflet-container img {
+  max-width: none;
+}
+
+.arau-leaflet-pin {
+  background: transparent;
+  border: 0;
+}
+
+.arau-leaflet-pin span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 3px solid white;
+  border-radius: 999px 999px 999px 7px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.22);
+  transform: rotate(45deg);
+}
+
+.arau-leaflet-pin svg {
+  transform: rotate(-45deg);
+}

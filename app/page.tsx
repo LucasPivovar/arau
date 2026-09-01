@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertCircle,
   ArrowRight,
   BarChart3,
   Battery,
@@ -14,17 +13,14 @@ import {
   ChevronRight,
   ClipboardList,
   Clock3,
-  Eye,
   FileCheck,
   FileText,
   Filter,
-  Home,
-  Layers,
+  Home as HomeIcon,
   MapPin,
   Menu,
   MoreVertical,
   Paperclip,
-  Play,
   Plus,
   Radio,
   RefreshCw,
@@ -37,18 +33,53 @@ import {
   SlidersHorizontal,
   Smartphone,
   Sparkles,
-  ThumbsUp,
-  TrendingDown,
-  TrendingUp,
   Truck,
-  User,
   Users,
   Wifi,
   X,
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+
+type LeafletMap = {
+  remove: () => void;
+  setView: (coords: [number, number], zoom: number) => LeafletMap;
+  zoomIn: () => void;
+  zoomOut: () => void;
+};
+
+type LeafletLayer = {
+  addTo: (map: LeafletMap) => LeafletLayer;
+  on?: (event: "click", handler: () => void) => LeafletLayer;
+};
+
+type LeafletGlobal = {
+  map: (
+    element: HTMLElement,
+    options?: {
+      attributionControl?: boolean;
+      scrollWheelZoom?: boolean;
+      zoomControl?: boolean;
+    },
+  ) => LeafletMap;
+  tileLayer: (url: string, options?: Record<string, unknown>) => LeafletLayer;
+  divIcon: (options: {
+    className: string;
+    html: string;
+    iconAnchor: [number, number];
+    iconSize: [number, number];
+  }) => unknown;
+  marker: (coords: [number, number], options?: { icon?: unknown; title?: string }) => LeafletLayer;
+  polyline: (coords: Array<[number, number]>, options?: Record<string, unknown>) => LeafletLayer;
+};
+
+declare global {
+  interface Window {
+    L?: LeafletGlobal;
+    __leafletLoadPromise?: Promise<LeafletGlobal>;
+  }
+}
 
 // ==========================================
 // TYPES
@@ -63,7 +94,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { id: "overview", label: "Visão Geral", icon: Home },
+  { id: "overview", label: "Visão Geral", icon: HomeIcon },
   { id: "map", label: "Mapa", icon: MapPin },
   { id: "occurrences", label: "Ocorrências", icon: ClipboardList },
   { id: "fleet", label: "Frota & IA", icon: Truck },
@@ -311,6 +342,49 @@ const aiDetectionsList = [
   { title: "Buraco", location: "Rua José de Anchieta, 560", neighborhood: "Fazenda Velha", time: "Hoje, 09:10", confidence: "95%", image: "IMG_5575.PNG" },
 ];
 
+const araucariaPins: Array<{ coords: [number, number]; color: string; index: number }> = [
+  { coords: [-25.5912, -49.4078], color: "#ef4444", index: 0 },
+  { coords: [-25.5886, -49.3944], color: "#f59e0b", index: 1 },
+  { coords: [-25.6026, -49.4182], color: "#3b82f6", index: 2 },
+  { coords: [-25.5968, -49.3831], color: "#10b981", index: 3 },
+  { coords: [-25.6084, -49.4019], color: "#ef4444", index: 4 },
+  { coords: [-25.5818, -49.4126], color: "#8b5cf6", index: 5 },
+  { coords: [-25.5992, -49.4326], color: "#10b981", index: 6 },
+];
+
+const fleetRoute: Array<[number, number]> = [
+  [-25.6062, -49.4345],
+  [-25.5962, -49.419],
+  [-25.5915, -49.404],
+  [-25.5879, -49.3922],
+  [-25.5962, -49.3792],
+];
+
+function loadLeaflet() {
+  if (typeof window === "undefined") return Promise.reject(new Error("Leaflet is only available in the browser."));
+  if (window.L) return Promise.resolve(window.L);
+  if (window.__leafletLoadPromise) return window.__leafletLoadPromise;
+
+  window.__leafletLoadPromise = new Promise<LeafletGlobal>((resolve, reject) => {
+    if (!document.querySelector("[data-leaflet-css]")) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+      link.dataset.leafletCss = "true";
+      document.head.appendChild(link);
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.async = true;
+    script.onload = () => (window.L ? resolve(window.L) : reject(new Error("Leaflet failed to initialize.")));
+    script.onerror = () => reject(new Error("Leaflet failed to load."));
+    document.body.appendChild(script);
+  });
+
+  return window.__leafletLoadPromise;
+}
+
 // ==========================================
 // MAIN COMPONENT (ROLES & VIEWS)
 // ==========================================
@@ -323,13 +397,13 @@ export default function Home() {
   const [newOccurrenceModalOpen, setNewOccurrenceModalOpen] = useState(false);
   const [occurrencesViewMode, setOccurrencesViewMode] = useState<"kanban" | "table">("kanban");
 
-  const handleOpenOccurrence = (item: Occurrence) => setSelectedOccurrence(item);
-  const handleCloseOccurrence = () => setSelectedOccurrence(null);
+  const handleOpenOccurrence = useCallback((item: Occurrence) => setSelectedOccurrence(item), []);
+  const handleCloseOccurrence = useCallback(() => setSelectedOccurrence(null), []);
 
-  const handleCreateOccurrence = (newOcc: Occurrence) => {
+  const handleCreateOccurrence = useCallback((newOcc: Occurrence) => {
     setOccurrences((prev) => [newOcc, ...prev]);
     setNewOccurrenceModalOpen(false);
-  };
+  }, []);
 
   return (
     <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f4f7f5] text-slate-900 font-sans antialiased">
@@ -538,17 +612,16 @@ export default function Home() {
                   occurrences={occurrences}
                   onSelectOccurrence={handleOpenOccurrence}
                   selectedOccurrence={selectedOccurrence}
-                  onCloseOccurrence={handleCloseOccurrence}
                   viewMode={occurrencesViewMode}
                   setViewMode={setOccurrencesViewMode}
                 />
               )}
               {activeSection === "map" && (
                 <Panel title="Mapa Completo de Ocorrências e Monitoramento" action="Filtros avançados">
-                  <CityMap expanded />
+                  <CityMap expanded occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />
                 </Panel>
               )}
-              {activeSection === "fleet" && <FleetSection />}
+              {activeSection === "fleet" && <FleetSection occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />}
               {activeSection === "teams" && <TeamsSection />}
               {activeSection === "reports" && <ReportsSection />}
               {activeSection === "settings" && <SettingsSection />}
@@ -568,12 +641,12 @@ export default function Home() {
       {/* Role 4: Frota & IA */}
       {currentRole === "frota" && (
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          <FleetSection />
+          <FleetSection occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />
         </div>
       )}
 
       {/* Occurrence Detail Drawer */}
-      {selectedOccurrence && currentRole === "prefeitura" && (
+      {selectedOccurrence && (currentRole === "prefeitura" || currentRole === "frota") && (
         <OccurrenceDetailDrawer occurrence={selectedOccurrence} onClose={handleCloseOccurrence} />
       )}
 
@@ -685,7 +758,7 @@ function OverviewSection({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-7">
           <Panel title="Mapa de Ocorrências" action="Filtros" action2="Camadas">
-            <CityMap />
+            <CityMap occurrences={occurrences} onSelectOccurrence={onSelectOccurrence} />
             <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-2.5 text-xs text-slate-600">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> Abertas (512)</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" /> Em andamento (213)</span>
@@ -737,14 +810,12 @@ function OccurrencesSection({
   occurrences,
   onSelectOccurrence,
   selectedOccurrence,
-  onCloseOccurrence,
   viewMode,
   setViewMode,
 }: {
   occurrences: Occurrence[];
   onSelectOccurrence: (item: Occurrence) => void;
   selectedOccurrence: Occurrence | null;
-  onCloseOccurrence: () => void;
   viewMode: "kanban" | "table";
   setViewMode: (m: "kanban" | "table") => void;
 }) {
@@ -1008,7 +1079,13 @@ function OccurrenceDetailDrawer({ occurrence, onClose }: { occurrence: Occurrenc
 // ==========================================
 // FLEET & AI MODULE (IMAGE 1)
 // ==========================================
-function FleetSection() {
+function FleetSection({
+  occurrences = initialOccurrences,
+  onSelectOccurrence,
+}: {
+  occurrences?: Occurrence[];
+  onSelectOccurrence?: (item: Occurrence) => void;
+}) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
@@ -1045,7 +1122,7 @@ function FleetSection() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-7">
           <Panel title="Monitoramento em tempo real">
-            <CityMap fleet />
+            <CityMap fleet occurrences={occurrences} onSelectOccurrence={onSelectOccurrence} />
           </Panel>
         </div>
         <div className="min-w-0 lg:col-span-5">
@@ -1237,7 +1314,6 @@ function CitizenPortalView({ occurrences, onOpenNewModal }: { occurrences: Occur
 // ==========================================
 function FieldTeamOSView() {
   const [serviceStatus, setServiceStatus] = useState<"atendimento" | "concluido">("atendimento");
-  const [checklist, setChecklist] = useState({ epi: true, sinalizacao: true, material: true, obs: true });
 
   return (
     <div className="mx-auto max-w-md p-4 sm:p-6">
@@ -1407,37 +1483,81 @@ function NewOccurrenceAIModal({ onClose, onCreate }: { onClose: () => void; onCr
 // ==========================================
 // MAP COMPONENT
 // ==========================================
-function CityMap({ fleet = false, expanded = false }: { fleet?: boolean; expanded?: boolean }) {
-  const pins = [
-    { pos: "left-[20%] top-[30%]", color: "bg-red-500" },
-    { pos: "left-[38%] top-[45%]", color: "bg-amber-500" },
-    { pos: "left-[55%] top-[35%]", color: "bg-blue-500" },
-    { pos: "left-[72%] top-[52%]", color: "bg-emerald-600" },
-    { pos: "left-[48%] top-[68%]", color: "bg-red-500" },
-  ];
+function CityMap({
+  fleet = false,
+  expanded = false,
+  occurrences = initialOccurrences,
+  onSelectOccurrence,
+}: {
+  fleet?: boolean;
+  expanded?: boolean;
+  occurrences?: Occurrence[];
+  onSelectOccurrence?: (item: Occurrence) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void loadLeaflet().then((leaflet) => {
+      if (cancelled || !containerRef.current) return;
+
+      const map = leaflet.map(containerRef.current, {
+        attributionControl: true,
+        scrollWheelZoom: true,
+        zoomControl: false,
+      }).setView([-25.5935, -49.4048], expanded ? 13 : 12);
+
+      mapRef.current = map;
+
+      leaflet.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+        maxZoom: 19,
+      }).addTo(map);
+
+      if (fleet) {
+        leaflet.polyline(fleetRoute, {
+          color: "#10b981",
+          weight: 5,
+          opacity: 0.72,
+        }).addTo(map);
+      }
+
+      const mapOccurrences = occurrences.length > 0 ? occurrences : initialOccurrences;
+
+      araucariaPins.forEach((pin) => {
+        const occurrence = mapOccurrences[pin.index % mapOccurrences.length];
+        const icon = leaflet.divIcon({
+          className: "arau-leaflet-pin",
+          iconAnchor: [17, 32],
+          iconSize: [34, 34],
+          html: `<span style="background:${pin.color}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>`,
+        });
+        const marker = leaflet.marker(pin.coords, { icon, title: occurrence?.title });
+        marker.addTo(map);
+        marker.on?.("click", () => occurrence && onSelectOccurrence?.(occurrence));
+      });
+    }).catch(() => {
+      // The fallback below keeps the layout usable if the map CDN is blocked.
+    });
+
+    return () => {
+      cancelled = true;
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, [expanded, fleet, occurrences, onSelectOccurrence]);
 
   return (
     <div className={`relative w-full overflow-hidden rounded-xl bg-[#e8efe9] border border-slate-200/80 ${expanded ? "h-[420px]" : "h-[280px] sm:h-[340px]"}`}>
-      <div className="absolute inset-0 opacity-60">
-        <div className="absolute left-0 top-1/4 h-1.5 w-full rotate-[-6deg] bg-white" />
-        <div className="absolute left-0 top-2/3 h-1.5 w-full rotate-[8deg] bg-white" />
-        <div className="absolute left-1/4 top-0 h-full w-1.5 rotate-[16deg] bg-white" />
-        <div className="absolute left-2/3 top-0 h-full w-1.5 rotate-[-10deg] bg-white" />
-        <div className="absolute bottom-0 right-0 h-36 w-56 rounded-tl-full bg-blue-100/70" />
-      </div>
-
-      <svg aria-hidden className="absolute inset-0 h-full w-full pointer-events-none">
-        <path d="M70 230 C170 90 260 120 330 170 S500 260 650 90" fill="none" stroke={fleet ? "#10b981" : "#94a3b8"} strokeDasharray={fleet ? "6 6" : "none"} strokeWidth={fleet ? "5" : "3"} />
-      </svg>
-
-      {pins.map((pin, i) => (
-        <span key={i} className={`absolute ${pin.pos} -translate-x-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-full ${pin.color} text-white shadow-md`}>
-          <MapPin className="h-3.5 w-3.5" />
-        </span>
-      ))}
-
-      <div className="absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-1.5 shadow-xs">
+      <div ref={containerRef} className="h-full w-full" />
+      <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-1.5 shadow-xs">
         <span className="text-xs font-bold text-slate-800">Araucária • Paraná</span>
+      </div>
+      <div className="absolute right-3 top-3 grid gap-2">
+        <button type="button" onClick={() => mapRef.current?.zoomIn()} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-lg font-bold text-slate-700 shadow-xs">+</button>
+        <button type="button" onClick={() => mapRef.current?.zoomOut()} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 bg-white text-lg font-bold text-slate-700 shadow-xs">-</button>
       </div>
     </div>
   );
