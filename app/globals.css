@@ -142,10 +142,22 @@ body {
   width: 100%;
   font-family: inherit;
   background: #e8efe9;
+  isolation: isolate;
+  position: relative;
+  z-index: 0;
 }
 
 .leaflet-container img {
   max-width: none;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20;
+}
+
+.arau-modal-open .arau-city-map {
+  visibility: hidden;
 }
 
 .arau-leaflet-pin {

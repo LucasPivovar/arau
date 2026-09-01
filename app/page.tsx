@@ -465,7 +465,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-[#f4f7f5] text-slate-900 font-sans antialiased">
+    <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-[#f4f7f5] text-slate-900 font-sans antialiased ${newOccurrenceModalOpen ? "arau-modal-open" : ""}`}>
       {/* Role Switcher Bar */}
       <header className="sticky top-0 z-50 flex w-full flex-wrap items-center justify-between gap-3 border-b border-emerald-950/10 bg-slate-900 px-4 py-2.5 text-white shadow-md">
         <div className="flex items-center gap-2.5">
@@ -1502,9 +1502,9 @@ function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCrea
   };
 
   return (
-    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-3 pt-14 sm:items-center sm:p-4">
       <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-[1px]" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-xl space-y-5 rounded-2xl bg-white p-5 shadow-2xl">
+      <div className="relative z-10 max-h-[78dvh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:max-h-[calc(100dvh-48px)] sm:p-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
@@ -1520,20 +1520,20 @@ function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCrea
           </button>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-[1fr_1.05fr]">
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1.05fr] md:gap-4">
           <div className="space-y-3">
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-              <img alt={currentType.title} className="h-44 w-full object-cover" src={`/${currentSample.img}`} />
+              <img alt={currentType.title} className="h-28 w-full object-cover sm:h-44" src={`/${currentSample.img}`} />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center text-xs font-bold text-emerald-800">
-                <BootstrapIcon name="camera" className="mb-1.5 h-5 w-5" />
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-xs font-bold text-emerald-800 sm:py-3">
+                <BootstrapIcon name="camera" className="mb-1 h-4 w-4 sm:mb-1.5 sm:h-5 sm:w-5" />
                 Abrir câmera
                 <span className="mt-0.5 text-[10px] font-medium text-emerald-700">Fotografar agora</span>
                 <input className="hidden" type="file" accept="image/*" capture="environment" />
               </label>
-              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-3 text-center text-xs font-bold text-slate-800">
-                <BootstrapIcon name="image" className="mb-1.5 h-5 w-5 text-slate-500" />
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-center text-xs font-bold text-slate-800 sm:py-3">
+                <BootstrapIcon name="image" className="mb-1 h-4 w-4 text-slate-500 sm:mb-1.5 sm:h-5 sm:w-5" />
                 Galeria
                 <span className="mt-0.5 text-[10px] font-medium text-slate-500">Escolher arquivo</span>
                 <input className="hidden" type="file" accept="image/*" />
@@ -1562,11 +1562,11 @@ function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCrea
                   key={type.title}
                   type="button"
                   onClick={() => chooseType(index)}
-                  className={`flex min-h-16 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${
+                  className={`flex min-h-12 items-center gap-2 rounded-xl border px-3 py-2 text-left text-[11px] font-bold transition sm:min-h-16 sm:text-xs ${
                     selectedTypeIndex === index ? "border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-500/20" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300"
                   }`}
                 >
-                  <BootstrapIcon name={type.icon} className="h-5 w-5 shrink-0" />
+                  <BootstrapIcon name={type.icon} className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
                   <span>{type.title}</span>
                 </button>
               ))}
@@ -1577,7 +1577,7 @@ function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCrea
               onChange={(event) => setDescription(event.target.value)}
               placeholder="Descreva o problema encontrado..."
               maxLength={500}
-              className="h-24 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-hidden focus:border-emerald-500"
+              className="h-20 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-hidden focus:border-emerald-500 sm:h-24"
             />
 
             <button onClick={handleFinish} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700">
@@ -1688,7 +1688,7 @@ function CityMap({
   }, [expanded, focusedOccurrence]);
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-xl bg-[#e8efe9] border border-slate-200/80 ${expanded ? "h-[420px]" : "h-[280px] sm:h-[340px]"}`}>
+    <div className={`arau-city-map relative w-full overflow-hidden rounded-xl bg-[#e8efe9] border border-slate-200/80 ${expanded ? "h-[420px]" : "h-[280px] sm:h-[340px]"}`}>
       <div ref={containerRef} className="h-full w-full" />
       <div className="pointer-events-none absolute bottom-3 left-3 rounded-lg bg-white/90 px-3 py-1.5 shadow-xs">
         <span className="text-xs font-bold text-slate-800">Araucária • Paraná</span>
