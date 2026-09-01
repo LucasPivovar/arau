@@ -464,6 +464,34 @@ export default function Home() {
     setSelectedOccurrence(newOcc);
   }, []);
 
+  const handleMoveOccurrence = useCallback((id: string, status: KanbanColumn["title"], targetIndex: number) => {
+    setOccurrences((prev) => {
+      const moving = prev.find((item) => item.id === id);
+      if (!moving) return prev;
+
+      const withoutMoving = prev.filter((item) => item.id !== id);
+      const sameStatusCount = withoutMoving.filter((item) => item.status === status).length;
+      const normalizedIndex = Math.max(0, Math.min(targetIndex, sameStatusCount));
+      const updatedMoving: Occurrence = { ...moving, status };
+      let matchingIndex = 0;
+      let insertAt = withoutMoving.length;
+
+      for (let index = 0; index < withoutMoving.length; index += 1) {
+        if (withoutMoving[index].status !== status) continue;
+        if (matchingIndex === normalizedIndex) {
+          insertAt = index;
+          break;
+        }
+        matchingIndex += 1;
+        insertAt = index + 1;
+      }
+
+      const next = [...withoutMoving];
+      next.splice(insertAt, 0, updatedMoving);
+      return next;
+    });
+  }, []);
+
   return (
     <div className={`min-h-screen w-full max-w-full overflow-x-hidden bg-[#f4f7f5] text-slate-900 font-sans antialiased ${newOccurrenceModalOpen ? "arau-modal-open" : ""}`}>
       {/* Role Switcher Bar */}
@@ -657,6 +685,8 @@ export default function Home() {
               {activeSection === "occurrences" && (
                 <OccurrencesSection
                   occurrences={occurrences}
+                  onMoveOccurrence={handleMoveOccurrence}
+                  onOpenNewOccurrence={() => setNewOccurrenceModalOpen(true)}
                   onSelectOccurrence={handleOpenOccurrence}
                   selectedOccurrence={selectedOccurrence}
                   viewMode={occurrencesViewMode}
@@ -855,17 +885,24 @@ function OverviewSection({
 // ==========================================
 function OccurrencesSection({
   occurrences,
+  onMoveOccurrence,
+  onOpenNewOccurrence,
   onSelectOccurrence,
   selectedOccurrence,
   viewMode,
   setViewMode,
 }: {
   occurrences: Occurrence[];
+  onMoveOccurrence: (id: string, status: KanbanColumn["title"], targetIndex: number) => void;
+  onOpenNewOccurrence: () => void;
   onSelectOccurrence: (item: Occurrence) => void;
   selectedOccurrence: Occurrence | null;
   viewMode: "kanban" | "table";
   setViewMode: (m: "kanban" | "table") => void;
 }) {
+  const [draggedOccurrenceId, setDraggedOccurrenceId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ status: KanbanColumn["title"]; index: number } | null>(null);
+
   const columns: KanbanColumn[] = [
     { title: "Nova", count: 146, color: "blue", items: occurrences.filter((o) => o.status === "Nova") },
     { title: "Em triagem", count: 213, color: "amber", items: occurrences.filter((o) => o.status === "Em triagem") },
@@ -960,7 +997,23 @@ function OccurrencesSection({
         <div className="w-full max-w-full overflow-x-auto pb-6 pt-1 scroll-smooth">
           <div className="flex gap-4 items-start min-w-max">
             {columns.map((column) => (
-              <div key={column.title} className="w-[310px] sm:w-[330px] shrink-0 rounded-xl border border-slate-200/90 bg-slate-100/70 p-3">
+              <div
+                key={column.title}
+                onDragOver={(event) => {
+                  event.preventDefault();
+                  setDropTarget({ status: column.title, index: column.items.length });
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  const id = event.dataTransfer.getData("text/plain") || draggedOccurrenceId;
+                  if (id) onMoveOccurrence(id, column.title, dropTarget?.status === column.title ? dropTarget.index : column.items.length);
+                  setDraggedOccurrenceId(null);
+                  setDropTarget(null);
+                }}
+                className={`w-[310px] sm:w-[330px] shrink-0 rounded-xl border p-3 transition ${
+                  dropTarget?.status === column.title ? "border-emerald-400 bg-emerald-50/80" : "border-slate-200/90 bg-slate-100/70"
+                }`}
+              >
                 <div className="flex items-center justify-between border-b border-slate-200/80 pb-2.5 mb-3 px-1">
                   <div className="flex items-center gap-2">
                     <span className={`h-2.5 w-2.5 rounded-full ${
@@ -972,15 +1025,48 @@ function OccurrencesSection({
                     <span className="text-xs font-bold text-slate-900">{column.title}</span>
                     <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-600">{column.count}</span>
                   </div>
-                  <button className="text-slate-400 hover:text-slate-700 p-1"><Plus className="h-4 w-4" /></button>
+                  <button onClick={onOpenNewOccurrence} className="text-slate-400 hover:text-slate-700 p-1" aria-label={`Adicionar ocorrência em ${column.title}`}>
+                    <Plus className="h-4 w-4" />
+                  </button>
                 </div>
 
-                <div className="space-y-3">
-                  {column.items.map((item) => (
+                <div className="max-h-[620px] space-y-3 overflow-y-auto pr-1 scrollbar-none">
+                  {column.items.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-slate-300 bg-white/70 px-3 py-8 text-center text-xs font-semibold text-slate-400">
+                      Arraste um card para cá
+                    </div>
+                  )}
+                  {column.items.map((item, itemIndex) => (
                     <article
                       key={item.id}
+                      draggable
+                      onDragStart={(event) => {
+                        setDraggedOccurrenceId(item.id);
+                        event.dataTransfer.effectAllowed = "move";
+                        event.dataTransfer.setData("text/plain", item.id);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedOccurrenceId(null);
+                        setDropTarget(null);
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const insertAfter = event.clientY > rect.top + rect.height / 2;
+                        setDropTarget({ status: column.title, index: itemIndex + (insertAfter ? 1 : 0) });
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const id = event.dataTransfer.getData("text/plain") || draggedOccurrenceId;
+                        if (id) onMoveOccurrence(id, column.title, dropTarget?.status === column.title ? dropTarget.index : itemIndex);
+                        setDraggedOccurrenceId(null);
+                        setDropTarget(null);
+                      }}
                       onClick={() => onSelectOccurrence(item)}
                       className={`group cursor-pointer rounded-xl border bg-white p-3 shadow-xs transition-all duration-150 hover:shadow-md ${
+                        draggedOccurrenceId === item.id ? "opacity-50 ring-2 ring-emerald-300" :
                         selectedOccurrence?.id === item.id ? "border-emerald-600 ring-2 ring-emerald-500/20" : "border-slate-200/90 hover:border-emerald-500"
                       }`}
                     >

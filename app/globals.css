@@ -160,6 +160,14 @@ body {
   visibility: hidden;
 }
 
+.scrollbar-none {
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 .arau-leaflet-pin {
   background: transparent;
   border: 0;
