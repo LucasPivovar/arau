@@ -32,7 +32,6 @@ import {
   ShieldCheck,
   SlidersHorizontal,
   Smartphone,
-  Sparkles,
   Truck,
   Users,
   Wifi,
@@ -43,6 +42,7 @@ import type { LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 type LeafletMap = {
+  invalidateSize: () => LeafletMap;
   remove: () => void;
   setView: (coords: [number, number], zoom: number) => LeafletMap;
   zoomIn: () => void;
@@ -123,6 +123,7 @@ interface Occurrence {
   confirmationsCount?: number;
   aiConfidence?: string;
   photosCount?: number;
+  coords?: [number, number];
 }
 
 interface KanbanColumn {
@@ -130,6 +131,45 @@ interface KanbanColumn {
   count: number;
   color: string;
   items: Occurrence[];
+}
+
+type BootstrapIconName =
+  | "arrowDown"
+  | "arrowUp"
+  | "camera"
+  | "checkCircle"
+  | "clock"
+  | "geoAlt"
+  | "handThumbsUp"
+  | "image"
+  | "lightbulb"
+  | "person"
+  | "play"
+  | "signpost"
+  | "trash";
+
+function BootstrapIcon({ className = "h-3.5 w-3.5", name }: { className?: string; name: BootstrapIconName }) {
+  const paths: Record<BootstrapIconName, ReactNode> = {
+    arrowDown: <path fillRule="evenodd" d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1" />,
+    arrowUp: <path fillRule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5A.5.5 0 0 0 8 15" />,
+    camera: <><path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" /><path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4zm.5 1a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1M8 11a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" /></>,
+    checkCircle: <><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" /><path d="m10.97 4.97-.02.022-3.473 4.425-2.093-2.094a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-1.071-1.05" /></>,
+    clock: <><path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z" /><path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0" /></>,
+    geoAlt: <><path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A32 32 0 0 1 8 14.58a32 32 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10" /><path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4" /></>,
+    handThumbsUp: <path d="M8.864.046C7.908-.193 7.02.53 6.956 1.466c-.072 1.051-.23 2.016-.428 2.59-.125.36-.479 1.013-1.04 1.639-.557.623-1.282 1.178-2.131 1.41C2.685 7.288 2 7.87 2 8.72v4.001c0 .845.682 1.464 1.448 1.545 1.07.114 1.564.415 2.068.723l.048.03c.272.165.578.348.97.484.397.136.861.217 1.466.217h3.5c.937 0 1.599-.478 1.934-1.064a1.86 1.86 0 0 0 .254-.912c.152-.091.293-.223.41-.391.24-.346.37-.807.37-1.293 0-.246-.034-.485-.098-.699.203-.205.369-.499.463-.853.093-.353.099-.745.018-1.111.189-.258.296-.594.296-.957 0-.764-.586-1.44-1.4-1.44h-3.33c.102-.308.188-.654.243-1.017.068-.45.067-.995-.097-1.614-.16-.602-.522-1.271-1.176-2.01zM3 8.72c0-.212.173-.413.482-.498.984-.268 1.817-.896 2.458-1.611.637-.712 1.107-1.555 1.28-2.054.235-.681.406-1.768.482-2.938.022-.326.342-.568.667-.486.64.16 1.155.585 1.52 1.139.36.548.522 1.197.455 1.75-.062.522-.209 1.002-.45 1.455-.136.257.043.523.333.523h3.52c.261 0 .5.236.5.44 0 .168-.068.304-.177.394a.5.5 0 0 0-.154.504c.109.407.094.775-.014 1.017-.101.226-.255.329-.454.329a.5.5 0 0 0-.486.621c.076.306.04.639-.087.861-.119.207-.292.334-.536.334a.5.5 0 0 0-.497.559c.046.386-.024.751-.182.983-.15.219-.35.324-.66.324H8c-.508 0-.855-.067-1.137-.164a3.4 3.4 0 0 1-.732-.372l-.046-.028c-.524-.32-1.224-.747-2.531-.886C3.208 13.879 3 13.612 3 13.171z" />,
+    image: <><path d="M6.002 5.5a1.5 1.5 0 1 1-3.001 0 1.5 1.5 0 0 1 3 0" /><path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1z" /></>,
+    lightbulb: <path d="M2 6a6 6 0 1 1 10.174 4.31c-.203.196-.359.4-.453.619l-.762 1.769A.5.5 0 0 1 10.5 13h-5a.5.5 0 0 1-.46-.302l-.761-1.77a1.96 1.96 0 0 0-.453-.618A5.98 5.98 0 0 1 2 6m3.47 8.5a.5.5 0 0 1 .5-.5h4.06a.5.5 0 0 1 0 1H5.97a.5.5 0 0 1-.5-.5" />,
+    person: <><path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6" /><path d="M14 14s-1-4-6-4-6 4-6 4 1 1 6 1 6-1 6-1m-1.05-.684A5.48 5.48 0 0 0 8 11a5.48 5.48 0 0 0-4.95 2.316C3.735 13.56 5.246 14 8 14s4.265-.44 4.95-.684" /></>,
+    play: <path d="M10.804 8 5 4.633v6.734zM4.5 3.748a.5.5 0 0 1 .757-.43l6.5 3.75a.5.5 0 0 1 0 .864l-6.5 3.75a.5.5 0 0 1-.757-.43z" />,
+    signpost: <path d="M7 1.414V2H2a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h5v2H2.5a.5.5 0 0 0-.354.146l-1.5 1.5a.5.5 0 0 0 0 .708l1.5 1.5A.5.5 0 0 0 2.5 12H7v3h1v-3h6a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H8V6h5.5a.5.5 0 0 0 .354-.146l1.5-1.5a.5.5 0 0 0 0-.708l-1.5-1.5A.5.5 0 0 0 13.5 2H8v-.586a.5.5 0 0 0-1 0" />,
+    trash: <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0zM14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1 0-2H5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1h2.5a1 1 0 0 1 1 1" />,
+  };
+
+  return (
+    <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 16 16">
+      {paths[name]}
+    </svg>
+  );
 }
 
 // Initial Mock Occurrences Matching Reference Designs
@@ -143,7 +183,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua Pedro Druszcz, 45 - Iguaçu, Araucária - PR",
     priority: "Alta",
     status: "Nova",
-    image: "IMG_5573.PNG",
+    image: "occurrences/pothole-road.png",
     sla: "3 dias",
     source: "Cidadão (App)",
     date: "18/05/2025",
@@ -164,7 +204,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua das Araucárias, 1.245 - Costeira, Araucária - PR",
     priority: "Média",
     status: "Em triagem",
-    image: "IMG_5576.PNG",
+    image: "occurrences/streetlight-off.png",
     sla: "5 dias",
     source: "IA - Veículo 03",
     date: "18/05/2025",
@@ -185,7 +225,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua das Flores, 890 - Thomaz Coelho, Araucária - PR",
     priority: "Média",
     status: "Encaminhada",
-    image: "IMG_5572.PNG",
+    image: "occurrences/illegal-dumping.png",
     sla: "4 dias",
     source: "Cidadão (App)",
     date: "18/05/2025",
@@ -206,7 +246,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Av. das Nações, 1.400 - Barra do Aricanduva, Araucária - PR",
     priority: "Média",
     status: "Em execução",
-    image: "IMG_5570.PNG",
+    image: "occurrences/pothole-road.png",
     sla: "8 dias",
     source: "IA - Veículo 01",
     date: "17/05/2025",
@@ -227,7 +267,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua João Pessoa, 112 - Centro, Araucária - PR",
     priority: "Baixa",
     status: "Resolvida",
-    image: "IMG_5575.PNG",
+    image: "occurrences/pothole-road.png",
     sla: "Resolvida em 2 dias",
     source: "IA - Veículo 07",
     date: "16/05/2025",
@@ -248,7 +288,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Av. Victor do Amaral, 720 - Centro, Araucária - PR",
     priority: "Média",
     status: "Nova",
-    image: "IMG_5570.PNG",
+    image: "occurrences/damaged-sign.png",
     sla: "5 dias",
     source: "Cidadão (App)",
     date: "18/05/2025",
@@ -269,7 +309,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua Santa Catarina, 450 - Fazenda Velha, Araucária - PR",
     priority: "Baixa",
     status: "Em triagem",
-    image: "IMG_5575.PNG",
+    image: "occurrences/broken-sidewalk.png",
     sla: "7 dias",
     source: "Cidadão (Web)",
     date: "18/05/2025",
@@ -290,7 +330,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Cruzamento Av. Brasil x Rua São Paulo - Centro",
     priority: "Alta",
     status: "Encaminhada",
-    image: "IMG_5570.PNG",
+    image: "occurrences/damaged-sign.png",
     sla: "6 dias",
     source: "Cidadão (App)",
     date: "17/05/2025",
@@ -311,7 +351,7 @@ const initialOccurrences: Occurrence[] = [
     address: "Rua das Américas, 88 - Iguaçu, Araucária - PR",
     priority: "Baixa",
     status: "Resolvida",
-    image: "IMG_5572.PNG",
+    image: "occurrences/damaged-sign.png",
     sla: "Resolvida em 1 dia",
     source: "IA - Veículo 07",
     date: "15/05/2025",
@@ -336,20 +376,33 @@ const fleetVehicles = [
 ];
 
 const aiDetectionsList = [
-  { title: "Buraco", location: "Rua das Flores, 1280", neighborhood: "Costeira", time: "Hoje, 09:32", confidence: "96%", image: "IMG_5573.PNG" },
-  { title: "Placa danificada", location: "Av. Archelau de Almeida Torres, 2100", neighborhood: "Thomaz Coelho", time: "Hoje, 09:24", confidence: "91%", image: "IMG_5572.PNG" },
-  { title: "Faixa apagada", location: "Rua Pedro Druszcz, 320", neighborhood: "Iguaçu", time: "Hoje, 09:18", confidence: "88%", image: "IMG_5570.PNG" },
-  { title: "Buraco", location: "Rua José de Anchieta, 560", neighborhood: "Fazenda Velha", time: "Hoje, 09:10", confidence: "95%", image: "IMG_5575.PNG" },
+  { title: "Buraco", location: "Rua das Flores, 1280", neighborhood: "Costeira", time: "Hoje, 09:32", confidence: "96%", image: "occurrences/pothole-road.png" },
+  { title: "Placa danificada", location: "Av. Archelau de Almeida Torres, 2100", neighborhood: "Thomaz Coelho", time: "Hoje, 09:24", confidence: "91%", image: "occurrences/damaged-sign.png" },
+  { title: "Faixa apagada", location: "Rua Pedro Druszcz, 320", neighborhood: "Iguaçu", time: "Hoje, 09:18", confidence: "88%", image: "occurrences/streetlight-off.png" },
+  { title: "Buraco", location: "Rua José de Anchieta, 560", neighborhood: "Fazenda Velha", time: "Hoje, 09:10", confidence: "95%", image: "occurrences/pothole-road.png" },
 ];
 
-const araucariaPins: Array<{ coords: [number, number]; color: string; index: number }> = [
-  { coords: [-25.5912, -49.4078], color: "#ef4444", index: 0 },
-  { coords: [-25.5886, -49.3944], color: "#f59e0b", index: 1 },
-  { coords: [-25.6026, -49.4182], color: "#3b82f6", index: 2 },
-  { coords: [-25.5968, -49.3831], color: "#10b981", index: 3 },
-  { coords: [-25.6084, -49.4019], color: "#ef4444", index: 4 },
-  { coords: [-25.5818, -49.4126], color: "#8b5cf6", index: 5 },
-  { coords: [-25.5992, -49.4326], color: "#10b981", index: 6 },
+const occurrenceCoordinates: Record<string, [number, number]> = {
+  "#98542": [-25.5912, -49.4078],
+  "#98540": [-25.5886, -49.3944],
+  "#98533": [-25.6026, -49.4182],
+  "#98528": [-25.5968, -49.3831],
+  "#98518": [-25.6084, -49.4019],
+  "#98561": [-25.5818, -49.4126],
+  "#98539": [-25.5992, -49.4326],
+  "#98566": [-25.5899, -49.4262],
+  "#98530": [-25.6044, -49.389],
+  "#98507": [-25.5863, -49.4006],
+};
+
+const araucariaPins: Array<{ id: string; coords: [number, number]; color: string; index: number }> = [
+  { id: "#98542", coords: occurrenceCoordinates["#98542"], color: "#ef4444", index: 0 },
+  { id: "#98540", coords: occurrenceCoordinates["#98540"], color: "#f59e0b", index: 1 },
+  { id: "#98533", coords: occurrenceCoordinates["#98533"], color: "#3b82f6", index: 2 },
+  { id: "#98528", coords: occurrenceCoordinates["#98528"], color: "#10b981", index: 3 },
+  { id: "#98518", coords: occurrenceCoordinates["#98518"], color: "#ef4444", index: 4 },
+  { id: "#98561", coords: occurrenceCoordinates["#98561"], color: "#8b5cf6", index: 5 },
+  { id: "#98539", coords: occurrenceCoordinates["#98539"], color: "#10b981", index: 6 },
 ];
 
 const fleetRoute: Array<[number, number]> = [
@@ -399,10 +452,16 @@ export default function Home() {
 
   const handleOpenOccurrence = useCallback((item: Occurrence) => setSelectedOccurrence(item), []);
   const handleCloseOccurrence = useCallback(() => setSelectedOccurrence(null), []);
+  const handleRoleChange = useCallback((role: Role) => {
+    setCurrentRole(role);
+    setSelectedOccurrence(null);
+    setNewOccurrenceModalOpen(false);
+  }, []);
 
   const handleCreateOccurrence = useCallback((newOcc: Occurrence) => {
     setOccurrences((prev) => [newOcc, ...prev]);
     setNewOccurrenceModalOpen(false);
+    setSelectedOccurrence(newOcc);
   }, []);
 
   return (
@@ -416,10 +475,10 @@ export default function Home() {
           <div className="flex flex-col">
             <span className="text-xs font-bold text-slate-100 leading-tight">Perfil Ativo:</span>
             <span className="text-[11px] text-emerald-400 font-medium leading-tight">
-              {currentRole === "prefeitura" && "🏛️ Backoffice Prefeitura"}
-              {currentRole === "cidadao" && "📱 App do Cidadão (Mobile PWA)"}
-              {currentRole === "equipe" && "👷 Equipe de Rua (Ordem de Serviço)"}
-              {currentRole === "frota" && "🚗 Central de Frota & IA"}
+              {currentRole === "prefeitura" && "Backoffice Prefeitura"}
+              {currentRole === "cidadao" && "App do Cidadão (Mobile PWA)"}
+              {currentRole === "equipe" && "Equipe de Rua (Ordem de Serviço)"}
+              {currentRole === "frota" && "Central de Frota & IA"}
             </span>
           </div>
         </div>
@@ -427,7 +486,7 @@ export default function Home() {
         {/* Role Switch Buttons */}
         <div className="flex items-center gap-1.5 rounded-lg bg-slate-800 p-1">
           <button
-            onClick={() => setCurrentRole("prefeitura")}
+            onClick={() => handleRoleChange("prefeitura")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
               currentRole === "prefeitura" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-300 hover:bg-slate-700 hover:text-white"
             }`}
@@ -437,7 +496,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setCurrentRole("cidadao")}
+            onClick={() => handleRoleChange("cidadao")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
               currentRole === "cidadao" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-300 hover:bg-slate-700 hover:text-white"
             }`}
@@ -447,7 +506,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setCurrentRole("equipe")}
+            onClick={() => handleRoleChange("equipe")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
               currentRole === "equipe" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-300 hover:bg-slate-700 hover:text-white"
             }`}
@@ -457,7 +516,7 @@ export default function Home() {
           </button>
 
           <button
-            onClick={() => setCurrentRole("frota")}
+            onClick={() => handleRoleChange("frota")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1 text-xs font-semibold transition ${
               currentRole === "frota" ? "bg-emerald-600 text-white shadow-xs" : "text-slate-300 hover:bg-slate-700 hover:text-white"
             }`}
@@ -467,14 +526,14 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Global Action: AI Simulator */}
+        {/* Global Action: New Occurrence */}
         <button
           onClick={() => setNewOccurrenceModalOpen(true)}
           className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-slate-950 shadow-xs transition hover:bg-emerald-400"
         >
-          <Sparkles className="h-3.5 w-3.5 text-slate-950" />
-          <span className="hidden md:inline">Simular Nova Ocorrência com IA</span>
-          <span className="md:hidden">+ Ocorrência IA</span>
+          <BootstrapIcon name="camera" className="h-3.5 w-3.5" />
+          <span className="hidden md:inline">Nova ocorrência</span>
+          <span className="md:hidden">Nova</span>
         </button>
       </header>
 
@@ -484,20 +543,8 @@ export default function Home() {
           <aside className="hidden border-r border-slate-200/80 bg-white lg:flex lg:flex-col lg:justify-between">
             <div className="flex flex-col">
               <Brand />
-              <div className="mx-4 my-2 flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/80 p-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-emerald-700 font-bold text-white shadow-xs">
-                    <ShieldCheck className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-bold text-slate-800 leading-tight">Prefeitura de Araucária</span>
-                    <span className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5">Paraná, Brasil</span>
-                  </div>
-                </div>
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              </div>
 
-              <nav className="space-y-1 px-3 py-4">
+              <nav className="space-y-1 px-3 py-3">
                 {navItems.map((item) => {
                   const isActive = activeSection === item.id;
                   return (
@@ -554,7 +601,7 @@ export default function Home() {
                   onClick={() => setNewOccurrenceModalOpen(true)}
                   className="hidden items-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 sm:flex"
                 >
-                  <Plus className="h-4 w-4" /> Nova ocorrência
+                  <BootstrapIcon name="camera" className="h-4 w-4" /> Nova ocorrência
                 </button>
                 <button className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600" aria-label="Notificações">
                   <Bell className="h-4 w-4" />
@@ -605,7 +652,7 @@ export default function Home() {
             {/* Page Section Rendering */}
             <div className="w-full max-w-full overflow-x-hidden p-4 sm:p-6 lg:p-8">
               {activeSection === "overview" && (
-                <OverviewSection onSelectOccurrence={handleOpenOccurrence} occurrences={occurrences} />
+                <OverviewSection onSelectOccurrence={handleOpenOccurrence} occurrences={occurrences} selectedOccurrence={selectedOccurrence} />
               )}
               {activeSection === "occurrences" && (
                 <OccurrencesSection
@@ -618,10 +665,10 @@ export default function Home() {
               )}
               {activeSection === "map" && (
                 <Panel title="Mapa Completo de Ocorrências e Monitoramento" action="Filtros avançados">
-                  <CityMap expanded occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />
+                  <CityMap expanded occurrences={occurrences} focusedOccurrence={selectedOccurrence} onSelectOccurrence={handleOpenOccurrence} />
                 </Panel>
               )}
-              {activeSection === "fleet" && <FleetSection occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />}
+              {activeSection === "fleet" && <FleetSection occurrences={occurrences} focusedOccurrence={selectedOccurrence} onSelectOccurrence={handleOpenOccurrence} />}
               {activeSection === "teams" && <TeamsSection />}
               {activeSection === "reports" && <ReportsSection />}
               {activeSection === "settings" && <SettingsSection />}
@@ -641,7 +688,7 @@ export default function Home() {
       {/* Role 4: Frota & IA */}
       {currentRole === "frota" && (
         <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-          <FleetSection occurrences={occurrences} onSelectOccurrence={handleOpenOccurrence} />
+          <FleetSection occurrences={occurrences} focusedOccurrence={selectedOccurrence} onSelectOccurrence={handleOpenOccurrence} />
         </div>
       )}
 
@@ -650,9 +697,9 @@ export default function Home() {
         <OccurrenceDetailDrawer occurrence={selectedOccurrence} onClose={handleCloseOccurrence} />
       )}
 
-      {/* AI Simulator Modal */}
+      {/* New Occurrence Modal */}
       {newOccurrenceModalOpen && (
-        <NewOccurrenceAIModal onClose={() => setNewOccurrenceModalOpen(false)} onCreate={handleCreateOccurrence} />
+        <NewOccurrenceModal onClose={() => setNewOccurrenceModalOpen(false)} onCreate={handleCreateOccurrence} />
       )}
     </div>
   );
@@ -664,9 +711,7 @@ export default function Home() {
 function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`flex items-center gap-3 ${compact ? "" : "px-5 py-5"}`}>
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-base font-black text-white shadow-xs">
-        <ShieldCheck className="h-6 w-6" />
-      </div>
+      <img alt="Araucária em Ação" className="h-10 w-10 shrink-0" src="/city-logo.svg" />
       <div className="flex flex-col min-w-0">
         <span className="text-base font-bold tracking-tight text-emerald-900 leading-tight">Araucária em Ação</span>
         <span className="text-xs font-medium text-slate-500 leading-tight mt-0.5">Gestão Urbana Inteligente</span>
@@ -681,9 +726,11 @@ function Brand({ compact = false }: { compact?: boolean }) {
 function OverviewSection({
   onSelectOccurrence,
   occurrences,
+  selectedOccurrence,
 }: {
   onSelectOccurrence: (item: Occurrence) => void;
   occurrences: Occurrence[];
+  selectedOccurrence: Occurrence | null;
 }) {
   return (
     <div className="w-full max-w-full space-y-6">
@@ -711,7 +758,7 @@ function OverviewSection({
               <p className="text-2xl font-bold text-slate-900">512</p>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold text-emerald-700">▲ 8,7% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" /> 8,7% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
         </div>
 
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
@@ -724,7 +771,7 @@ function OverviewSection({
               <p className="text-2xl font-bold text-slate-900">1.248</p>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold text-emerald-700">▲ 12,3% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" /> 12,3% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
         </div>
 
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
@@ -737,7 +784,7 @@ function OverviewSection({
               <p className="text-2xl font-bold text-slate-900">689</p>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold text-blue-700">▲ 15,1% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-blue-700"><BootstrapIcon name="arrowUp" /> 15,1% <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
         </div>
 
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
@@ -750,7 +797,7 @@ function OverviewSection({
               <p className="text-2xl font-bold text-slate-900">3,6 dias</p>
             </div>
           </div>
-          <p className="mt-3 text-xs font-semibold text-emerald-700">▼ -0,6 dia <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700"><BootstrapIcon name="arrowDown" /> -0,6 dia <span className="font-normal text-slate-500">em relação à semana anterior</span></p>
         </div>
       </div>
 
@@ -758,7 +805,7 @@ function OverviewSection({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-7">
           <Panel title="Mapa de Ocorrências" action="Filtros" action2="Camadas">
-            <CityMap occurrences={occurrences} onSelectOccurrence={onSelectOccurrence} />
+            <CityMap occurrences={occurrences} focusedOccurrence={selectedOccurrence} onSelectOccurrence={onSelectOccurrence} />
             <div className="mt-3 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-2.5 text-xs text-slate-600">
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-red-500" /> Abertas (512)</span>
               <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-amber-500" /> Em andamento (213)</span>
@@ -841,7 +888,7 @@ function OccurrencesSection({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600"><ClipboardList className="h-4 w-4" /></span>
             <div><p className="text-[11px] text-slate-500">Novas</p><p className="text-lg font-bold text-slate-900">146</p></div>
           </div>
-          <p className="mt-2 text-[10px] font-semibold text-emerald-700">▲ 18,6% vs semana ant.</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" className="h-3 w-3" /> 18,6% vs semana ant.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
@@ -849,7 +896,7 @@ function OccurrencesSection({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50 text-amber-600"><Clock3 className="h-4 w-4" /></span>
             <div><p className="text-[11px] text-slate-500">Em Triagem</p><p className="text-lg font-bold text-slate-900">213</p></div>
           </div>
-          <p className="mt-2 text-[10px] font-semibold text-emerald-700">▲ 8,4% vs semana ant.</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" className="h-3 w-3" /> 8,4% vs semana ant.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
@@ -857,7 +904,7 @@ function OccurrencesSection({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-purple-50 text-purple-600"><FileCheck className="h-4 w-4" /></span>
             <div><p className="text-[11px] text-slate-500">Em Execução</p><p className="text-lg font-bold text-slate-900">438</p></div>
           </div>
-          <p className="mt-2 text-[10px] font-semibold text-emerald-700">▲ 13,7% vs semana ant.</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" className="h-3 w-3" /> 13,7% vs semana ant.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs">
@@ -865,7 +912,7 @@ function OccurrencesSection({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"><CheckCircle2 className="h-4 w-4" /></span>
             <div><p className="text-[11px] text-slate-500">Resolvidas</p><p className="text-lg font-bold text-slate-900">1.248</p></div>
           </div>
-          <p className="mt-2 text-[10px] font-semibold text-emerald-700">▲ 12,7% vs semana ant.</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" className="h-3 w-3" /> 12,7% vs semana ant.</p>
         </div>
 
         <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 shadow-xs col-span-2 sm:col-span-1">
@@ -873,7 +920,7 @@ function OccurrencesSection({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-50 text-red-600"><ShieldAlert className="h-4 w-4" /></span>
             <div><p className="text-[11px] text-slate-500">Duplicadas</p><p className="text-lg font-bold text-slate-900">89</p></div>
           </div>
-          <p className="mt-2 text-[10px] font-semibold text-emerald-700">▼ -6,7% vs semana ant.</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] font-semibold text-emerald-700"><BootstrapIcon name="arrowDown" className="h-3 w-3" /> -6,7% vs semana ant.</p>
         </div>
       </div>
 
@@ -950,7 +997,7 @@ function OccurrencesSection({
                         <span className="truncate">{item.neighborhood}</span>
                       </div>
                       <div className="mt-3 flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-100 pt-2 text-[11px]">
-                        <span className="rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700">🕒 SLA: {item.sla}</span>
+                        <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 font-semibold text-emerald-700"><BootstrapIcon name="clock" className="h-3 w-3" /> SLA: {item.sla}</span>
                         <span className={`rounded px-2 py-0.5 font-bold ${
                           item.priority === "Alta" ? "bg-red-50 text-red-700" :
                           item.priority === "Média" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700"
@@ -980,10 +1027,15 @@ function OccurrenceDetailDrawer({ occurrence, onClose }: { occurrence: Occurrenc
   const [internalNote, setInternalNote] = useState("");
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end">
-      <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
-      <aside className="relative z-10 flex h-full w-full max-w-lg flex-col bg-white shadow-2xl overflow-y-auto">
-        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-6 py-4 backdrop-blur-md">
+    <div className="pointer-events-none fixed inset-0 z-50">
+      <button
+        type="button"
+        aria-label="Fechar ocorrência"
+        className="pointer-events-auto absolute inset-0 bg-slate-900/15 backdrop-blur-[1px] transition-opacity"
+        onClick={onClose}
+      />
+      <aside className="pointer-events-auto absolute bottom-3 right-3 top-20 z-10 flex w-[min(430px,calc(100vw-24px))] flex-col overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-5 sm:right-5 sm:top-24">
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b border-slate-200 bg-white/95 px-5 py-4 backdrop-blur-md">
           <div className="flex items-center gap-2.5">
             <span className="text-base font-bold text-slate-900">Ocorrência {occurrence.id}</span>
             <StatusPill label={occurrence.status} />
@@ -993,15 +1045,15 @@ function OccurrenceDetailDrawer({ occurrence, onClose }: { occurrence: Occurrenc
           </button>
         </div>
 
-        <div className="flex-1 p-6 space-y-6">
+        <div className="flex-1 p-5 space-y-5">
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-xs">
             <img alt={occurrence.title} className="h-56 w-full object-cover" src={`/${occurrence.image}`} />
           </div>
 
           <div className="flex items-center gap-2">
             <span className="rounded-md bg-red-50 px-3 py-1 text-xs font-bold text-red-700">● {occurrence.priority}</span>
-            <span className="rounded-md bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">🕒 SLA: {occurrence.sla}</span>
-            <span className="rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">👤 {occurrence.source}</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700"><BootstrapIcon name="clock" /> SLA: {occurrence.sla}</span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"><BootstrapIcon name="person" /> {occurrence.source}</span>
           </div>
 
           <div className="space-y-3 rounded-xl border border-slate-200/90 bg-slate-50/50 p-4 text-xs">
@@ -1080,9 +1132,11 @@ function OccurrenceDetailDrawer({ occurrence, onClose }: { occurrence: Occurrenc
 // FLEET & AI MODULE (IMAGE 1)
 // ==========================================
 function FleetSection({
+  focusedOccurrence,
   occurrences = initialOccurrences,
   onSelectOccurrence,
 }: {
+  focusedOccurrence?: Occurrence | null;
   occurrences?: Occurrence[];
   onSelectOccurrence?: (item: Occurrence) => void;
 }) {
@@ -1107,11 +1161,11 @@ function FleetSection({
         </div>
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
           <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><Route className="h-6 w-6" /></div><div><p className="text-xs text-slate-500">Km analisados hoje</p><p className="text-2xl font-bold text-slate-900">1.248 km</p></div></div>
-          <p className="mt-3 text-xs font-semibold text-emerald-700">▲ +12,4% em relação a ontem</p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" /> +12,4% em relação a ontem</p>
         </div>
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
           <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-50 text-purple-700"><Zap className="h-6 w-6" /></div><div><p className="text-xs text-slate-500">Detecções por IA</p><p className="text-2xl font-bold text-slate-900">89</p></div></div>
-          <p className="mt-3 text-xs font-semibold text-emerald-700">▲ +18,7% em relação a ontem</p>
+          <p className="mt-3 flex items-center gap-1 text-xs font-semibold text-emerald-700"><BootstrapIcon name="arrowUp" /> +18,7% em relação a ontem</p>
         </div>
         <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs">
           <div className="flex items-center gap-3"><div className="flex h-12 w-12 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><ShieldCheck className="h-6 w-6" /></div><div><p className="text-xs text-slate-500">Confiança média</p><p className="text-2xl font-bold text-slate-900">92%</p></div></div>
@@ -1122,7 +1176,7 @@ function FleetSection({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="min-w-0 lg:col-span-7">
           <Panel title="Monitoramento em tempo real">
-            <CityMap fleet occurrences={occurrences} onSelectOccurrence={onSelectOccurrence} />
+            <CityMap fleet occurrences={occurrences} focusedOccurrence={focusedOccurrence} onSelectOccurrence={onSelectOccurrence} />
           </Panel>
         </div>
         <div className="min-w-0 lg:col-span-5">
@@ -1195,9 +1249,9 @@ function CitizenPortalView({ occurrences, onOpenNewModal }: { occurrences: Occur
   const [citizenSelectedOcc, setCitizenSelectedOcc] = useState<Occurrence>(occurrences[0]);
 
   return (
-    <div className="mx-auto max-w-md p-4 sm:p-6">
-      <div className="overflow-hidden rounded-[36px] border-4 border-slate-800 bg-white shadow-2xl">
-        <div className="flex items-center justify-between bg-white px-6 pt-3 pb-1 text-xs font-bold text-slate-800">
+    <div className="mx-auto w-full max-w-md p-0 sm:p-6">
+      <div className="min-h-[calc(100vh-48px)] overflow-hidden bg-white shadow-none sm:min-h-0 sm:rounded-[36px] sm:border-4 sm:border-slate-800 sm:shadow-2xl">
+        <div className="hidden items-center justify-between bg-white px-6 pt-3 pb-1 text-xs font-bold text-slate-800 sm:flex">
           <span>9:41</span>
           <div className="h-4 w-24 rounded-full bg-slate-900" />
           <div className="flex items-center gap-1.5"><Wifi className="h-3.5 w-3.5" /><Battery className="h-3.5 w-3.5" /></div>
@@ -1235,7 +1289,9 @@ function CitizenPortalView({ occurrences, onOpenNewModal }: { occurrences: Occur
                 >
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100">
                     <img alt="" className="h-full w-full object-cover" src={`/${occ.image}`} />
-                    <span className="absolute bottom-1 left-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[9px] font-bold text-white">📷 {occ.photosCount || 1}</span>
+                    <span className="absolute bottom-1 left-1 inline-flex items-center gap-1 rounded bg-slate-900/80 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                      <BootstrapIcon name="camera" className="h-3 w-3" /> {occ.photosCount || 1}
+                    </span>
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between"><strong className="text-xs font-bold text-slate-900">{occ.id}</strong><StatusPill label={occ.status} small /></div>
@@ -1248,7 +1304,7 @@ function CitizenPortalView({ occurrences, onOpenNewModal }: { occurrences: Occur
 
             <div className="px-5 pb-3">
               <button onClick={onOpenNewModal} className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-lg">
-                <Plus className="h-4 w-4" /> Nova ocorrência
+                <BootstrapIcon name="camera" className="h-4 w-4" /> Nova ocorrência
               </button>
             </div>
           </div>
@@ -1316,9 +1372,9 @@ function FieldTeamOSView() {
   const [serviceStatus, setServiceStatus] = useState<"atendimento" | "concluido">("atendimento");
 
   return (
-    <div className="mx-auto max-w-md p-4 sm:p-6">
-      <div className="overflow-hidden rounded-[36px] border-4 border-slate-800 bg-white shadow-2xl">
-        <div className="flex items-center justify-between bg-white px-6 pt-3 pb-1 text-xs font-bold text-slate-800">
+    <div className="mx-auto w-full max-w-md p-0 sm:p-6">
+      <div className="min-h-[calc(100vh-48px)] overflow-hidden bg-white shadow-none sm:min-h-0 sm:rounded-[36px] sm:border-4 sm:border-slate-800 sm:shadow-2xl">
+        <div className="hidden items-center justify-between bg-white px-6 pt-3 pb-1 text-xs font-bold text-slate-800 sm:flex">
           <span>08:42</span>
           <div className="h-4 w-24 rounded-full bg-slate-900" />
           <div className="flex items-center gap-1.5"><Wifi className="h-3.5 w-3.5" /><Battery className="h-3.5 w-3.5" /></div>
@@ -1345,22 +1401,31 @@ function FieldTeamOSView() {
           <div className="space-y-2">
             <span className="text-[11px] font-bold text-slate-700 block">Ações do atendimento</span>
             <div className="grid grid-cols-2 gap-2">
-              <button className="rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white">▶ Iniciar atendimento</button>
-              <button className="rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">📍 Cheguei ao local</button>
-              <button className="rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">📷 Foto antes</button>
-              <button className="rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">📷 Foto depois</button>
+              <button className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white">
+                <BootstrapIcon name="play" className="h-4 w-4" /> Iniciar atendimento
+              </button>
+              <button className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">
+                <BootstrapIcon name="geoAlt" className="h-4 w-4" /> Cheguei ao local
+              </button>
+              <button className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">
+                <BootstrapIcon name="camera" className="h-4 w-4" /> Foto antes
+              </button>
+              <button className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-600 bg-white py-2.5 text-xs font-bold text-emerald-800">
+                <BootstrapIcon name="camera" className="h-4 w-4" /> Foto depois
+              </button>
             </div>
-            <button onClick={() => setServiceStatus("concluido")} className="w-full rounded-xl border border-emerald-600 bg-emerald-50 py-3 text-xs font-bold text-emerald-800">
-              ✔ Concluir serviço
+            <button onClick={() => setServiceStatus("concluido")} className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-emerald-50 py-3 text-xs font-bold text-emerald-800">
+              <BootstrapIcon name="checkCircle" className="h-4 w-4" /> Concluir serviço
             </button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-3.5 space-y-2 text-xs">
             <div className="flex justify-between font-bold"><span>Checklist de execução</span><span className="text-emerald-700">4/4</span></div>
-            <p>✔ EPI utilizado</p>
-            <p>✔ Sinalização do local</p>
-            <p>✔ Material utilizado (Lâmpada 250W)</p>
-            <p>✔ Observações concluídas</p>
+            {["EPI utilizado", "Sinalização do local", "Material utilizado (Lâmpada 250W)", "Observações concluídas"].map((item) => (
+              <p key={item} className="flex items-center gap-2">
+                <BootstrapIcon name="checkCircle" className="h-3.5 w-3.5 text-emerald-700" /> {item}
+              </p>
+            ))}
           </div>
 
           {serviceStatus === "concluido" && (
@@ -1376,105 +1441,150 @@ function FieldTeamOSView() {
 }
 
 // ==========================================
-// AI SIMULATOR / NEW OCCURRENCE MODAL
+// NEW OCCURRENCE MODAL
 // ==========================================
-function NewOccurrenceAIModal({ onClose, onCreate }: { onClose: () => void; onCreate: (occ: Occurrence) => void }) {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedSample, setSelectedSample] = useState(0);
-  const [aiAnalyzing, setAiAnalyzing] = useState(false);
-
-  const sampleImages = [
-    { title: "Buraco na pista", img: "IMG_5573.PNG", category: "Buracos", location: "Rua Pedro Druszcz, 45 - Iguaçu", confidence: "96%", priority: "Alta" as const },
-    { title: "Placa danificada", img: "IMG_5570.PNG", category: "Placas", location: "Av. Victor do Amaral, 720 - Centro", confidence: "91%", priority: "Média" as const },
-    { title: "Poste apagado", img: "IMG_5576.PNG", category: "Iluminação", location: "Rua das Araucárias, 1.245 - Costeira", confidence: "94%", priority: "Média" as const },
-    { title: "Calçada com buraco", img: "IMG_5575.PNG", category: "Calçadas", location: "Rua Santa Catarina, 450 - Fazenda Velha", confidence: "87%", priority: "Baixa" as const },
+function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCreate: (occ: Occurrence) => void }) {
+  const occurrenceTypes: Array<{
+    category: Occurrence["category"];
+    icon: BootstrapIconName;
+    priority: Occurrence["priority"];
+    title: string;
+  }> = [
+    { title: "Buraco na estrada", category: "Buracos", icon: "geoAlt", priority: "Alta" },
+    { title: "Placa danificada", category: "Placas", icon: "signpost", priority: "Média" },
+    { title: "Iluminação apagada", category: "Iluminação", icon: "lightbulb", priority: "Média" },
+    { title: "Calçada irregular", category: "Calçadas", icon: "geoAlt", priority: "Baixa" },
+    { title: "Entulho ou lixo", category: "Limpeza", icon: "trash", priority: "Média" },
   ];
 
+  const sampleImages = [
+    { title: "Buraco na estrada", img: "occurrences/pothole-road.png", category: "Buracos", location: "Rua Pedro Druszcz, 45 - Iguaçu" },
+    { title: "Placa danificada", img: "occurrences/damaged-sign.png", category: "Placas", location: "Av. Victor do Amaral, 720 - Centro" },
+    { title: "Iluminação apagada", img: "occurrences/streetlight-off.png", category: "Iluminação", location: "Rua das Araucárias, 1.245 - Costeira" },
+    { title: "Calçada irregular", img: "occurrences/broken-sidewalk.png", category: "Calçadas", location: "Rua Santa Catarina, 450 - Fazenda Velha" },
+    { title: "Entulho ou lixo", img: "occurrences/illegal-dumping.png", category: "Limpeza", location: "Rua das Flores, 890 - Thomaz Coelho" },
+  ];
+
+  const [selectedTypeIndex, setSelectedTypeIndex] = useState(0);
+  const [selectedSample, setSelectedSample] = useState(0);
+  const [description, setDescription] = useState("");
+  const currentType = occurrenceTypes[selectedTypeIndex];
   const currentSample = sampleImages[selectedSample];
 
-  const handleSimulate = () => {
-    setAiAnalyzing(true);
-    setTimeout(() => {
-      setAiAnalyzing(false);
-      setStep(2);
-    }, 1000);
+  const chooseType = (index: number) => {
+    setSelectedTypeIndex(index);
+    const matchingPhoto = sampleImages.findIndex((photo) => photo.category === occurrenceTypes[index].category);
+    if (matchingPhoto >= 0) setSelectedSample(matchingPhoto);
   };
 
   const handleFinish = () => {
+    const jitter = () => (Math.random() - 0.5) * 0.018;
+
     onCreate({
       id: `#${Math.floor(100000 + Math.random() * 900000)}`,
       protocol: `PROTO-2025-${Math.floor(100000 + Math.random() * 900000)}`,
-      title: currentSample.title,
-      category: currentSample.category,
+      title: currentType.title,
+      category: currentType.category,
       neighborhood: currentSample.location.split("-")[1]?.trim() || "Araucária",
       address: currentSample.location,
-      priority: currentSample.priority,
+      priority: currentType.priority,
       status: "Nova",
       image: currentSample.img,
       sla: "3 dias",
       source: "Cidadão (App)",
       date: "Hoje",
       time: "Agora",
+      description: description || "Ocorrência registrada pelo cidadão com foto e localização.",
       confirmationsCount: 1,
-      aiConfidence: currentSample.confidence,
+      photosCount: 1,
+      coords: [-25.5935 + jitter(), -49.4048 + jitter()],
     });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl space-y-5">
+      <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-[1px]" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-xl space-y-5 rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800"><Sparkles className="h-4 w-4" /></span>
-            <h3 className="text-base font-bold text-slate-900">Simulador de Nova Ocorrência com IA</h3>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
+              <BootstrapIcon name="camera" className="h-5 w-5" />
+            </span>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Nova ocorrência</h3>
+              <p className="text-xs text-slate-500">Fotografe o problema e escolha o tipo do chamado.</p>
+            </div>
           </div>
-          <button onClick={onClose}><X className="h-5 w-5 text-slate-400" /></button>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg text-slate-400 hover:bg-slate-100" aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        {step === 1 ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2.5">
-              {sampleImages.map((s, idx) => (
-                <div
-                  key={s.title}
-                  onClick={() => setSelectedSample(idx)}
-                  className={`cursor-pointer rounded-xl border p-2 ${selectedSample === idx ? "border-emerald-600 bg-emerald-50/40 ring-2 ring-emerald-500/30" : "border-slate-200"}`}
+        <div className="grid gap-4 md:grid-cols-[1fr_1.05fr]">
+          <div className="space-y-3">
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+              <img alt={currentType.title} className="h-44 w-full object-cover" src={`/${currentSample.img}`} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-center text-xs font-bold text-emerald-800">
+                <BootstrapIcon name="camera" className="mb-1.5 h-5 w-5" />
+                Abrir câmera
+                <span className="mt-0.5 text-[10px] font-medium text-emerald-700">Fotografar agora</span>
+                <input className="hidden" type="file" accept="image/*" capture="environment" />
+              </label>
+              <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-3 text-center text-xs font-bold text-slate-800">
+                <BootstrapIcon name="image" className="mb-1.5 h-5 w-5 text-slate-500" />
+                Galeria
+                <span className="mt-0.5 text-[10px] font-medium text-slate-500">Escolher arquivo</span>
+                <input className="hidden" type="file" accept="image/*" />
+              </label>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label htmlFor="occurrence-type" className="mb-1.5 block text-xs font-bold text-slate-800">Tipo da ocorrência</label>
+              <select
+                id="occurrence-type"
+                value={selectedTypeIndex}
+                onChange={(event) => chooseType(Number(event.target.value))}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-hidden focus:border-emerald-500"
+              >
+                {occurrenceTypes.map((type, index) => (
+                  <option key={type.title} value={index}>{type.title}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              {occurrenceTypes.map((type, index) => (
+                <button
+                  key={type.title}
+                  type="button"
+                  onClick={() => chooseType(index)}
+                  className={`flex min-h-16 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-bold transition ${
+                    selectedTypeIndex === index ? "border-emerald-600 bg-emerald-50 text-emerald-900 ring-2 ring-emerald-500/20" : "border-slate-200 bg-white text-slate-700 hover:border-emerald-300"
+                  }`}
                 >
-                  <img alt="" className="h-20 w-full rounded-lg object-cover" src={`/${s.img}`} />
-                  <span className="mt-1 block text-xs font-bold text-slate-800 truncate">{s.title}</span>
-                </div>
+                  <BootstrapIcon name={type.icon} className="h-5 w-5 shrink-0" />
+                  <span>{type.title}</span>
+                </button>
               ))}
             </div>
-            <button
-              onClick={handleSimulate}
-              disabled={aiAnalyzing}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-xs font-bold text-white shadow-md"
-            >
-              {aiAnalyzing ? <><RefreshCw className="h-4 w-4 animate-spin" /> Analisando Imagem...</> : <><Sparkles className="h-4 w-4" /> Diagnosticar com IA</>}
+
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Descreva o problema encontrado..."
+              maxLength={500}
+              className="h-24 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-hidden focus:border-emerald-500"
+            />
+
+            <button onClick={handleFinish} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-md hover:bg-emerald-700">
+              <Send className="h-4 w-4" /> Registrar ocorrência
             </button>
           </div>
-        ) : (
-          <div className="space-y-4 text-xs">
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 space-y-2">
-              <span className="font-bold text-emerald-950 block">✔ Reconhecimento Concluído (Confiança {currentSample.confidence})</span>
-              <p><strong>Categoria Sugerida:</strong> {currentSample.category}</p>
-              <p><strong>Prioridade Calculada:</strong> P2 — {currentSample.priority}</p>
-            </div>
-
-            <div className="rounded-2xl border border-amber-300 bg-amber-50 p-4 space-y-2">
-              <strong className="text-amber-950 block">Atenção: Possível Chamado Semelhante Detectado</strong>
-              <p className="text-amber-800">Existe um chamado aberto a 8 metros deste ponto (#98542 - Buraco na via).</p>
-              <button onClick={() => { alert("Apoio registrado com sucesso!"); onClose(); }} className="w-full rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white">
-                👍 Confirmar que o problema ainda existe (+1 apoio)
-              </button>
-            </div>
-
-            <button onClick={handleFinish} className="w-full text-center text-xs text-slate-600 underline">
-              Criar novo chamado separado mesmo assim
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -1486,11 +1596,13 @@ function NewOccurrenceAIModal({ onClose, onCreate }: { onClose: () => void; onCr
 function CityMap({
   fleet = false,
   expanded = false,
+  focusedOccurrence,
   occurrences = initialOccurrences,
   onSelectOccurrence,
 }: {
   fleet?: boolean;
   expanded?: boolean;
+  focusedOccurrence?: Occurrence | null;
   occurrences?: Occurrence[];
   onSelectOccurrence?: (item: Occurrence) => void;
 }) {
@@ -1524,19 +1636,32 @@ function CityMap({
         }).addTo(map);
       }
 
+      window.setTimeout(() => map.invalidateSize(), 80);
+
       const mapOccurrences = occurrences.length > 0 ? occurrences : initialOccurrences;
 
-      araucariaPins.forEach((pin) => {
-        const occurrence = mapOccurrences[pin.index % mapOccurrences.length];
+      mapOccurrences.forEach((occurrence, index) => {
+        const fallbackPin = araucariaPins[index % araucariaPins.length];
+        const coords = occurrence.coords ?? occurrenceCoordinates[occurrence.id] ?? fallbackPin.coords;
+        const color =
+          occurrence.status === "Resolvida" ? "#10b981" :
+          occurrence.status === "Em triagem" || occurrence.status === "Em andamento" ? "#f59e0b" :
+          occurrence.status === "Encaminhada" ? "#8b5cf6" :
+          occurrence.source.includes("IA") ? "#3b82f6" :
+          "#ef4444";
         const icon = leaflet.divIcon({
           className: "arau-leaflet-pin",
           iconAnchor: [17, 32],
           iconSize: [34, 34],
-          html: `<span style="background:${pin.color}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>`,
+          html: `<span style="background:${color}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 1 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></span>`,
         });
-        const marker = leaflet.marker(pin.coords, { icon, title: occurrence?.title });
+        const marker = leaflet.marker(coords, { icon, title: occurrence.title });
         marker.addTo(map);
-        marker.on?.("click", () => occurrence && onSelectOccurrence?.(occurrence));
+        marker.on?.("click", () => {
+          map.invalidateSize();
+          map.setView(coords, expanded ? 15 : 14);
+          onSelectOccurrence?.(occurrence);
+        });
       });
     }).catch(() => {
       // The fallback below keeps the layout usable if the map CDN is blocked.
@@ -1548,6 +1673,19 @@ function CityMap({
       mapRef.current = null;
     };
   }, [expanded, fleet, occurrences, onSelectOccurrence]);
+
+  useEffect(() => {
+    if (!focusedOccurrence) return;
+    const coords = focusedOccurrence.coords ?? occurrenceCoordinates[focusedOccurrence.id];
+    if (!coords) return;
+
+    const timer = window.setTimeout(() => {
+      mapRef.current?.invalidateSize();
+      mapRef.current?.setView(coords, expanded ? 15 : 14);
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [expanded, focusedOccurrence]);
 
   return (
     <div className={`relative w-full overflow-hidden rounded-xl bg-[#e8efe9] border border-slate-200/80 ${expanded ? "h-[420px]" : "h-[280px] sm:h-[340px]"}`}>
