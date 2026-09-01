@@ -619,7 +619,7 @@ export default function Home() {
 
             {/* Mobile Nav Drawer */}
             {mobileMenuOpen && (
-              <div className="fixed inset-0 z-50 flex lg:hidden">
+              <div className="fixed inset-0 z-[1200] flex lg:hidden">
                 <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={() => setMobileMenuOpen(false)} />
                 <div className="relative flex w-full max-w-xs flex-1 flex-col bg-white p-4 shadow-2xl">
                   <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -1027,7 +1027,7 @@ function OccurrenceDetailDrawer({ occurrence, onClose }: { occurrence: Occurrenc
   const [internalNote, setInternalNote] = useState("");
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-50">
+    <div className="pointer-events-none fixed inset-0 z-[1100]">
       <button
         type="button"
         aria-label="Fechar ocorrência"
@@ -1502,7 +1502,7 @@ function NewOccurrenceModal({ onClose, onCreate }: { onClose: () => void; onCrea
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[1200] flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-slate-900/25 backdrop-blur-[1px]" onClick={onClose} />
       <div className="relative z-10 w-full max-w-xl space-y-5 rounded-2xl bg-white p-5 shadow-2xl">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
